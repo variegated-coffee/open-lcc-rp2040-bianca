@@ -6,6 +6,7 @@
 #define LCC_RELAY_LCC_PROTOCOL_H
 
 #include <cstdint>
+#include <stdint-gcc.h>
 
 typedef enum : uint16_t {
     LCC_VALIDATION_ERROR_NONE = 0,
@@ -16,10 +17,27 @@ typedef enum : uint16_t {
     LCC_VALIDATION_ERROR_SOLENOID_OPEN_WITHOUT_PUMP = 1 << 5,
 } LccPacketValidationError;
 
+typedef enum : uint8_t {
+    LCC_SHIFT_REGISTER_1_CN6_1 = 1 << 0,
+    LCC_SHIFT_REGISTER_1_CN6_3 = 1 << 1,
+    LCC_SHIFT_REGISTER_1_CN6_5 = 1 << 2,
+    LCC_SHIFT_REGISTER_1_BREW_BOILER_RELAY = 1 << 3,
+    LCC_SHIFT_REGISTER_1_FA7_SOLENOID = 1 << 4,
+    LCC_SHIFT_REGISTER_1_FA8_SOLENOID = 1 << 5,
+    LCC_SHIFT_REGISTER_1_DISABLE_OLED_12V = 1 << 6,
+    LCC_SHIFT_REGISTER_1_DISABLE_OLED_3V3 = 1 << 7,
+} LccShiftRegister1Flags;
+
+typedef enum : uint8_t {
+    LCC_SHIFT_REGISTER_2_SERVICE_BOILER_RELAY = 1 << 0,
+    LCC_SHIFT_REGISTER_2_PUMP_RELAY = 1 << 4,
+    LCC_SHIFT_REGISTER_2_FA9 = 1 << 5,
+} LccShiftRegister2Flags;
+
 struct LccRawPacket {
     uint8_t header{};
-    uint8_t byte1{};
-    uint8_t byte2{};
+    uint8_t shiftRegister2{};
+    uint8_t shiftRegister1{};
     uint8_t byte3{};
     uint8_t checksum{};
 };

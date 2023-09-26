@@ -9,8 +9,8 @@ LccRawPacket convert_lcc_parsed_to_raw(LccParsedPacket parsed) {
     LccRawPacket packet = LccRawPacket();
 
     packet.header = 0x80;
-    packet.byte1 = (parsed.pump_on ? 0x10 : 0x00) | (parsed.service_boiler_ssr_on ? 0x01: 0x00);
-    packet.byte2 = (parsed.service_boiler_solenoid_open ? 0x10 : 0x00) | (parsed.brew_boiler_ssr_on ? 0x08 : 0x00);
+    packet.shiftRegister2 = (parsed.pump_on ? 0x10 : 0x00) | (parsed.service_boiler_ssr_on ? 0x01 : 0x00);
+    packet.shiftRegister1 = (parsed.service_boiler_solenoid_open ? 0x10 : 0x00) | (parsed.brew_boiler_ssr_on ? 0x08 : 0x00);
     packet.byte3 = (parsed.minus_button_pressed ? 0x08 : 0x00) | (parsed.plus_button_pressed ? 0x04 : 0x00);
     static_assert(sizeof(packet) > 2, "LCC Packet is too small, for some reason");
     packet.checksum = calculate_checksum(((uint8_t *) &packet + 1), sizeof(packet) - 2, 0x00);
@@ -21,10 +21,10 @@ LccRawPacket convert_lcc_parsed_to_raw(LccParsedPacket parsed) {
 LccParsedPacket convert_lcc_raw_to_parsed(LccRawPacket raw) {
     LccParsedPacket parsed = LccParsedPacket();
 
-    parsed.pump_on = raw.byte1 & 0x10;
-    parsed.service_boiler_ssr_on = raw.byte1 & 0x01;
-    parsed.service_boiler_solenoid_open = raw.byte2 & 0x10;
-    parsed.brew_boiler_ssr_on = raw.byte2 & 0x08;
+    parsed.pump_on = raw.shiftRegister2 & LCC_SHIFT_REGISTER_2_PUMP_RELAY;
+    parsed.service_boiler_ssr_on = raw.shiftRegister2 & LCC_SHIFT_REGISTER_2_SERVICE_BOILER_RELAY;
+    parsed.service_boiler_solenoid_open = raw.shiftRegister1 & LCC_SHIFT_REGISTER_1_FA7_SOLENOID;
+    parsed.brew_boiler_ssr_on = raw.shiftRegister1 & LCC_SHIFT_REGISTER_1_BREW_BOILER_RELAY;
     parsed.minus_button_pressed = raw.byte3 & 0x08;
     parsed.plus_button_pressed = raw.byte3 & 0x04;
 
@@ -48,15 +48,15 @@ uint16_t validate_lcc_raw_packet(LccRawPacket packet) {
         error |= LCC_VALIDATION_ERROR_INVALID_CHECKSUM;
     }
 
-    if (packet.byte1 & 0xEE || packet.byte2 & 0xE7 || packet.byte3 & 0xF3) {
+    if (packet.shiftRegister2 & 0xEE || packet.shiftRegister1 & 0xE7 || packet.byte3 & 0xF3) {
         error |= LCC_VALIDATION_ERROR_UNEXPECTED_FLAGS;
     }
 
-    if (packet.byte1 & 0x01 && packet.byte2 & 0x08) {
+    if (packet.shiftRegister2 & 0x01 && packet.shiftRegister1 & 0x08) {
         error |= LCC_VALIDATION_ERROR_BOTH_SSRS_ON;
     }
 
-    if (packet.byte2 & 0x10 && (packet.byte1 & 0x10) == 0x00) {
+    if (packet.shiftRegister1 & 0x10 && (packet.shiftRegister2 & 0x10) == 0x00) {
         error |= LCC_VALIDATION_ERROR_SOLENOID_OPEN_WITHOUT_PUMP;
     }
 

@@ -5,30 +5,34 @@
 #ifndef SMART_LCC_PINS_H
 #define SMART_LCC_PINS_H
 
-#define OLED_MOSI (7u)
-#define OLED_MISO (4u)
-#define OLED_SCK (6u)
-#define OLED_CS (5u)
-#define OLED_DC (25u)
-#define OLED_RST (15u)
+#define ESP_TX (0u)
+#define ESP_RX (1u)
+#define ESP_CTS (2u)
+#define ESP_RTS (3u)
 
-#define PLUS_BUTTON (17u)
-#define MINUS_BUTTON (16u)
+#define CB_TX (4u)
+#define CB_RX (5u)
 
-#define CB_TX (0u)
-#define CB_RX (1u)
+#define QWIIC2_SDA (6u)
+#define QWIIC2_SCL (7u)
 
-#define AUX_TX (20u)
-#define AUX_RX (21u)
+#define QWIIC1_SDA (8u)
+#define QWIIC1_SCL (9u)
 
-#define NINA_UART_TX_SPI_MISO (8u)
-#define NINA_UART_RX_SPI_CS (9u)
-#define NINA_UART_CTS_SPI_ACK (10u)
-#define NINA_UART_RTS_SPI_MOSI (11u)
-#define NINA_GPIO0 (2u)
-#define NINA_RESETN (3u)
-#define NINA_SPI_SCK (14u)
+#define SETTINGS_FLASH_SCLK (10u)
+#define SETTINGS_FLASH_MOSI (11u)
+#define SETTINGS_FLASH_MISO (12u)
+#define SETTINGS_FLASH_CS (13u)
 
-#define LED_BUILTIN (6u)
+#define SERIAL_BOOT (16u)
+
+#define SD_DET_A (14u)
+#define SD_DET_B (15u)
+#define SD_SCLK (18u)
+#define SD_MOSI_CMD (19u)
+#define SD_MISO_DAT0 (20u)
+#define SD_DAT1 (21u)
+#define SD_DAT2 (22u)
+#define SD_CS_DAT3 (23u)
 
 #endif //SMART_LCC_PINS_H
