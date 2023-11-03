@@ -6,24 +6,18 @@
 #define FIRMWARE_SYSTEMCONTROLLER_H
 
 #include <optional.hpp>
-#include "lcc_protocol.h"
-#include "control_board_protocol.h"
+#include "Controller/Core0/Protocol/lcc_protocol.h"
+#include "Controller/Core0/Protocol/control_board_protocol.h"
 #include <SystemStatus.h>
-#include "TimedLatch.h"
-#include "HysteresisController.h"
-#include "HybridController.h"
+#include "Controller/Core0/Util/TimedLatch.h"
+#include "Controller/Core0/Util/HysteresisController.h"
+#include "Controller/Core0/Util/HybridController.h"
 #include <queue>
 #include <types.h>
 #include <hardware/uart.h>
 #include <hardware/gpio.h>
 #include <utils/PicoQueue.h>
 #include <utils/MovingAverage.h>
-
-typedef enum {
-    BOTH_SSRS_OFF = 0,
-    BREW_BOILER_SSR_ON,
-    SERVICE_BOILER_SSR_ON,
-} SsrState;
 
 class SsrStateQueueItem {
 public:
@@ -35,8 +29,7 @@ public:
     explicit SystemController(
             uart_inst_t * _uart,
             PicoQueue<SystemControllerStatusMessage> *outgoingQueue,
-            PicoQueue<SystemControllerCommand> *incomingQueue,
-            SystemSettings *settings
+            PicoQueue<SystemControllerCommand> *incomingQueue
             );
 
     void loop();
@@ -61,8 +54,6 @@ private:
     nonstd::optional<absolute_time_t> heatupStage2Timer{};
     nonstd::optional<absolute_time_t> brewStartedAt{};
     nonstd::optional<absolute_time_t> plannedAutoSleepAt{};
-
-    absolute_time_t lastSleepModeExitAt = nil_time;
 
     uart_inst_t* uart;
     PicoQueue<SystemControllerStatusMessage> *outgoingQueue;
@@ -105,6 +96,8 @@ private:
 
     HybridController brewBoilerController;
     HysteresisController serviceBoilerController;
+
+    FlowMode flowMode = FULL_FLOW;
 
     PicoQueue<SsrState> ssrStateQueue = PicoQueue<SsrState>(25);
 

@@ -1,0 +1,8 @@
+**/build
+*.html
+*.png
+*.zip
+*.xlsx
+*.bak
+**/.vscode
+no-OS-FatFS-SD-SPI-RPi-Pico-1.1.0.tar.gz

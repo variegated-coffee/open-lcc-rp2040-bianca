@@ -11,10 +11,6 @@
 
 class SystemSettings {
 public:
-    explicit SystemSettings(PicoQueue<SystemControllerCommand> *commandQueue, MulticoreSupport *multicoreSupport);
-
-    void initialize();
-
     [[nodiscard]] inline float getBrewTemperatureOffset() const { return currentSettings.brewTemperatureOffset; };
     inline bool getEcoMode() const { return currentSettings.ecoMode; };
     inline bool getSleepMode() const { return currentSettings.sleepMode; };
@@ -34,16 +30,8 @@ public:
     inline void setTargetServiceTemp(float targetServiceTemp) { currentSettings.serviceTemperatureTarget = targetServiceTemp; };
     inline void setBrewPidParameters(PidSettings params) { currentSettings.brewPidParameters = params; };
     inline void setServicePidParameters(PidSettings params) { currentSettings.servicePidParameters = params; };
-
-    void writeSettingsIfChanged();
-
 private:
-    PicoQueue<SystemControllerCommand> *_commandQueue;
-    MulticoreSupport* multicoreSupport;
-
     SettingStruct currentSettings;
-    void readSettings();
-    void writeToFlash();
 };
 
 

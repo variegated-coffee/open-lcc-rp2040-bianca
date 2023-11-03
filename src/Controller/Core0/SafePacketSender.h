@@ -7,7 +7,7 @@
 
 #include <hardware/uart.h>
 #include <pico/time.h>
-#include "lcc_protocol.h"
+#include "Controller/Core0/Protocol/lcc_protocol.h"
 
 class SafePacketSender {
 public:

@@ -6,9 +6,9 @@
 #define FIRMWARE_SYSTEMSTATUS_H
 
 #include <pico/time.h>
-#include "Controller/Core0/lcc_protocol.h"
-#include "Controller/Core0/control_board_protocol.h"
-#include "Controller/Core0/PIDController.h"
+#include "Controller/Core0/Protocol/lcc_protocol.h"
+#include "Controller/Core0/Protocol/control_board_protocol.h"
+#include "Controller/Core0/Util/PIDController.h"
 #include "Controller/Core0/SystemSettings.h"
 #include <esp-protocol.h>
 
@@ -59,8 +59,6 @@ public:
     inline PidSettings getServicePidSettings() const { return latestStatusMessage.servicePidSettings; }
     inline PidRuntimeParameters getBrewPidRuntimeParameters() const { return latestStatusMessage.brewPidParameters; }
     inline PidRuntimeParameters getServicePidRuntimeParameters() const { return latestStatusMessage.servicePidParameters; }
-
-    inline absolute_time_t getLastSleepModeExitAt() const { return latestStatusMessage.lastSleepModeExitAt; };
 
     bool mqttConnected = false;
 

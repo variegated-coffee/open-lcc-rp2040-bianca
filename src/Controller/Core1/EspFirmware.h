@@ -14,10 +14,12 @@
 #include "utils/PicoQueue.h"
 #include "ringbuffer.hpp"
 #include "SystemStatus.h"
+#include "SettingsManager.h"
+#include "Automations.h"
 
 class EspFirmware {
 public:
-    explicit EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SystemStatus* status);
+    explicit EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SystemStatus* status, SettingsManager* settingsManager, Automations* automations);
 
     void loop();
 
@@ -27,12 +29,20 @@ public:
     static uart_inst_t *interruptedUart;
 
     bool pingBlocking();
-    bool sendStatus(SystemControllerStatusMessage *systemControllerStatusMessage);
+    bool sendStatus(SystemControllerStatusMessage *systemControllerStatusMessage,
+                    float externalTemperature1,
+                    float externalTemperature2,
+                    float externalTemperature3,
+                    uint16_t autoSleepMinutes,
+                    float plannedSleepInSeconds
+                            );
 
 private:
     uart_inst_t *uart;
     PicoQueue<SystemControllerCommand> *commandQueue;
     SystemStatus* status;
+    SettingsManager* settingsManager;
+    Automations* automations;
 
     bool waitForAck(uint32_t id);
     void handleESPStatus(ESPMessageHeader *header);

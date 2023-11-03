@@ -21,6 +21,7 @@ typedef enum {
     BAIL_REASON_CB_PACKET_INVALID = 2,
     BAIL_REASON_LCC_PACKET_INVALID = 3,
     BAIL_REASON_SSR_QUEUE_EMPTY = 4,
+    BAIL_REASON_FORCED = 5,
 } SystemControllerBailReason;
 
 struct PidSettings {
@@ -54,6 +55,19 @@ typedef enum {
 } SystemControllerRunState;
 
 typedef enum {
+    BOTH_SSRS_OFF = 0,
+    BREW_BOILER_SSR_ON,
+    SERVICE_BOILER_SSR_ON,
+} SsrState;
+
+typedef enum {
+    FULL_FLOW = 0,
+    PUMP_ON_PWM_SOLENOID = 1,
+    PUMP_OFF_PWM_SOLENOID = 2,
+    PUMP_OFF_SOLENOID_OPEN = 3,
+} FlowMode;
+
+typedef enum {
     SYSTEM_CONTROLLER_COALESCED_STATE_UNDETERMINED = 0,
     SYSTEM_CONTROLLER_COALESCED_STATE_HEATUP,
     SYSTEM_CONTROLLER_COALESCED_STATE_TEMPS_NORMALIZING,
@@ -73,7 +87,6 @@ struct SettingStruct {
     PidSettings brewPidParameters = PidSettings{.Kp = 0.8, .Ki = 0.12, .Kd = 12.0, .windupLow = -7.f, .windupHigh = 7.f};
     PidSettings servicePidParameters = PidSettings{.Kp = 0.6, .Ki = 0.1, .Kd = 1.0, .windupLow = -10.f, .windupHigh = 10.f};
 };
-
 
 struct SystemControllerStatusMessage{
     absolute_time_t timestamp{};
@@ -99,10 +112,13 @@ struct SystemControllerStatusMessage{
     bool currentlyBrewing{};
     bool currentlyFillingServiceBoiler{};
     bool waterTankLow{};
-    uint16_t autoSleepMinutes{};
-    float plannedSleepInSeconds{};
-    absolute_time_t lastSleepModeExitAt = nil_time;
+//    uint16_t autoSleepMinutes{};
+//    float plannedSleepInSeconds{};
+//    absolute_time_t lastSleepModeExitAt = nil_time;
     uint16_t bailCounter{};
+    uint16_t sbRawHi{};
+    uint16_t sbRawLo{};
+    FlowMode flowMode{};
 };
 
 typedef enum {
@@ -117,7 +133,9 @@ typedef enum {
     COMMAND_SET_AUTO_SLEEP_MINUTES,
     COMMAND_UNBAIL,
     COMMAND_TRIGGER_FIRST_RUN,
-    COMMAND_BEGIN
+    COMMAND_BEGIN,
+    COMMAND_FORCE_HARD_BAIL,
+    COMMAND_SET_FLOW_MODE,
 } SystemControllerCommandType;
 
 struct SystemControllerCommand {
@@ -128,6 +146,9 @@ struct SystemControllerCommand {
     float float4{};
     float float5{};
     bool bool1{};
+    uint32_t int1{};
+    uint32_t int2{};
+    uint32_t int3{};
 };
 
 
