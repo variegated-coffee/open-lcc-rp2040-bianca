@@ -26,9 +26,9 @@ There are (at the time of writing) three versions of the Bianca, V1, V2, and V3.
 * The power light now an LED and software controlled (not part of the upgrade kit)
   * Available as P/N 3000056, but it's ridiculously expensive
 
-It also uses a different Gicar Control Box, but since the V3 upgrade kit doesn't include it, my suspicion is that the changes in it are marginal (it could be as simple as the box having a different sticker). The new part number is 9600125, and the old one was 9600046.
+It also uses a different Gicar Control Box, but since the V3 upgrade kit doesn't include it, my suspicion is that the changes in it are marginal (it could be as simple as the box having a different sticker). The new part number is 9600125, and the old one was 9600046. One known change is the new Standby mode, which presumably should be disabled when using Open LCC. It is unknown if this is the only change.
 
-I have done some reverse engineering of the Control Board, and as such I have gained a better understanding of how it works, and how the protocol works. Interestingly, new solenoid is just a regular solenoid, so my suspicion is that the LCC basically PWMs the solenoid to create the low flow mode. I would love a protocol dump between a V3 LCC and the Control Board to confirm though. I would also love photos of the Control Board internals, just to confirm that there are no relevant differences.
+I have done some reverse engineering of the Control Board, and as such I have gained a better understanding of how it works, and how the protocol works. Interestingly, new solenoid is just a regular solenoid, so my suspicion is that the LCC basically PWMs the solenoid to create the low flow mode. I would love a protocol dump between a V3 LCC and the Control Board to confirm though. I would also love photos of the Control Board internals, just to confirm that there are no relevant hardware differences.
 
 ### Versioning
 This project uses Semver. The major version number is increased whe RP2040 <-> ESP32 protocol version is increased (as that is a BC break).
@@ -48,85 +48,29 @@ Create a firmware for using the Open LCC in a Lelit Bianca to its fullest extent
 
 #### RP2040 Core 1
 * Communication with the ESP32-S3
+* Reading from external sensors (via I2C etc)
+* Handling Automations
 
-#### Core communication protocol
+## Building
 
-##### Core1 to Core0
+The project is built using CMake. There are two relevant targets. `smart_lcc` and `smart_lcc_combined`. You need to first 
+build the `smart_lcc` target, and *then* build the `smart_lcc_combined` target. I'm sure it would be possible to roll both
+of these targets into one, but I haven't put enough effort into it yet. The reason for the two targets is the Serial
+Bootloader.
 
-* One message type
-    * Timestamp (absolute_time_t)
-    * Brew temperature
-    * Brew set point
-    * Brew PID settings
-    * Brew PID parameters
-    * Service temperature
-    * Service set point
-    * Service PID settings
-    * Service PID parameters
-    * Eco mode
-    * System state
-        * Idle
-        * Heatup
-        * Warm
-        * Sleeping
-        * Bailed
-        * First run (fill all the boilers before heating them)
-    * Bail reason
-    * Brewing
-    * Filling service boiler
-    * Water low
+### A note on Serial Boot
+This project includes a [serial third stage bootloader](https://github.com/usedbytes/rp2040-serial-bootloader). This is 
+to be able to update the firmware of the RP2040 over Wi-fi via the ESP32-S3. You can still update firmware via USB, and 
+in that case you should use the `smart_lcc_combined.uf2` file.
 
-##### Core0 to Core1
+To update the firmware via Wi-fi, use [serial-flash](https://github.com/usedbytes/serial-flash) the following command:
 
-* Multiple message types
-    * Set Brew Set Point (Non compensated)
-    * Set Brew PID Parameters
-    * Set Service Set Point
-    * Set Service PID Parameters
-    * Set Eco Mode (on/off)
-    * Set Sleep mode (on/off)
-    * Unbail
-    * Trigger first run
-* Payloads
-    * Float 1
-        * Brew set point
-        * Service boiler set point
-        * Kp
-    * Float 2
-        * Ki
-    * Float 3
-        * Kd
-    * Bool
-        * Eco mode
-        * Sleep mode
+```sh
+serial-flash tcp:192.168.1.10:6638 smart_lcc_app.bin 0x10008000
+```
 
-
-### Reference material
-(In no particular order)
-
-* https://www.youtube.com/watch?v=fAEDHOUJCEo
-* Random facts about the stock implementation:
-    * Some implementation details are available in https://www.1st-line.com/wp-content/uploads/2018/12/Parameter-settings-technical-menu-Bianca-PL162T.pdf
-        * Original parameters (not necessarily applicable since PID parameters are hightly implementation dependent):
-            * Brew boiler
-                * Kp: 0.8
-                * Ki: 0.04
-                * Kd: 12
-                * On/off delta: 15°C
-            * Service boiler
-                * Kp: 20
-                * Ki: 0
-                * Kd: 20
-                * On/off delta: 0
-            * Brew boiler offset: 10°C
-        * A "full" heatup cycle goes to 130°C first, then drops to set temperature
-            * Triggered when the temperature on power on is less than 70°C
-        * Service boiler is not PID controlled (even though it can be). Even if it *were*, having a Ki of 0, means it's a PD controller. It's a simple on/off controller.
-    * Minimum on/off-time seems to be around 100-120 ms
-    * When in eco mode, a warmup consists of running the coffee boiler full blast, holding the temperature around 130°C for 4 minutes, then dropping to the set point
-    * When in regular mode, there is a kind of time slot system for which boiler is used. The time slots are 1 second wide.
-    * Shot saving seems to be implemented by simply blocking new brews from starting when the tank is empty. There's no fanciness with allowing it to run for a certain amount of time or anything.
-    * It takes about 3 seconds for the LCC to pick up on an empty water tank (presumably to debounce the signal)
+Obviously, replace the IP address and port to match the IP address of the ESP32-S3, and the port of the serial bridge
+you're using for the ESP32-S3.
 
 ## Licensing
 
