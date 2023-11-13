@@ -83,6 +83,7 @@ bool EspFirmware::pingBlocking() {
             .responseTo = 0,
             .type = ESP_MESSAGE_PING,
             .error = ESP_ERROR_NONE,
+            .version = ESP_RP2040_PROTOCOL_VERSION,
             .length = sizeof(ESPPingMessage),
     };
 
@@ -128,7 +129,9 @@ bool EspFirmware::sendStatus(
         float externalTemperature2,
         float externalTemperature3,
         uint16_t autoSleepMinutes,
-        float plannedSleepInSeconds
+        float plannedSleepInSeconds,
+        uint16_t currentRoutine,
+        uint16_t currentRoutineStep
                 ) {
     ESPMessageHeader statusHeader{
             .direction = ESP_DIRECTION_RP2040_TO_ESP32,
@@ -136,6 +139,7 @@ bool EspFirmware::sendStatus(
             .responseTo = 0,
             .type = ESP_MESSAGE_SYSTEM_STATUS,
             .error = ESP_ERROR_NONE,
+            .version = ESP_RP2040_PROTOCOL_VERSION,
             .length = sizeof(ESPSystemStatusMessage),
     };
 
@@ -187,6 +191,8 @@ bool EspFirmware::sendStatus(
             .flowMode = flowMode,
             .brewBoilerOn = systemControllerStatusMessage->brewSSRActive,
             .serviceBoilerOn = systemControllerStatusMessage->serviceSSRActive,
+            .loadedRoutine = currentRoutine,
+            .currentRoutineStep = currentRoutineStep,
     };
 
     ringbuffer.consumerClear();
@@ -362,7 +368,7 @@ void EspFirmware::handleCommand(ESPMessageHeader *header) {
             sendNack(header->id, ESP_ERROR_INCOMPLETE_DATA);
         }
     } else {
-        USB_PRINTF("Unexpected message length. Expected: %u Received: %lu\n", sizeof(ESPSystemCommandMessage), header->length);
+        //USB_PRINTF("Unexpected message length. Expected: %u Received: %lu\n", sizeof(ESPSystemCommandMessage), header->length);
         sendNack(header->id, ESP_ERROR_UNEXPECTED_MESSAGE_LENGTH);
     }
 }
@@ -374,6 +380,7 @@ void EspFirmware::sendAck(uint32_t messageId) {
             .responseTo = messageId,
             .type = ESP_MESSAGE_ACK,
             .error = ESP_ERROR_NONE,
+            .version = ESP_RP2040_PROTOCOL_VERSION,
             .length = 0,
     };
 
@@ -387,6 +394,7 @@ void EspFirmware::sendNack(uint32_t messageId, ESPError error) {
             .responseTo = messageId,
             .type = ESP_MESSAGE_NACK,
             .error = error,
+            .version = ESP_RP2040_PROTOCOL_VERSION,
             .length = 0,
     };
 

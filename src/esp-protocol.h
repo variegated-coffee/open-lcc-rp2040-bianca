@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#define ESP_RP2040_PROTOCOL_VERSION 0x0004
+#define ESP_RP2040_PROTOCOL_VERSION 0x0005
 
 enum ESPMessageType: uint32_t {
     ESP_MESSAGE_PING = 0x00000001, // ESP -> RP2040
@@ -18,7 +18,8 @@ enum ESPMessageType: uint32_t {
     ESP_MESSAGE_SYSTEM_COMMAND, // ESP -> RP2040
     ESP_MESSAGE_NOT_USED,
     ESP_MESSAGE_POLL_STATUS, // ESP -> RP2040
-    ESP_MESSAGE_ADD_COMMAND_TO_ROUTINE, // ESP -> RP2040
+    ESP_MESSAGE_ADD_COMMAND_TO_ROUTINE_STEP, // ESP -> RP2040
+    ESP_MESSAGE_ADD_EXIT_CONDITION_TO_ROUTINE_STEP, // ESP -> RP2040
 };
 
 enum ESPDirection: uint32_t {
@@ -44,14 +45,16 @@ enum ESPFlowMode: uint8_t {
     ESP_FLOW_MODE_PUMP_ON_PWM_SOLENOID = 1,
     ESP_FLOW_MODE_PUMP_OFF_PWM_SOLENOID = 2,
     ESP_FLOW_MODE_PUMP_OFF_SOLENOID_OPEN = 3,
+    ESP_FLOW_MODE_PUMP_OFF_SOLENOID_CLOSED = 4,
 };
 
-struct __packed ESPMessageHeader {
+struct __attribute__((packed)) ESPMessageHeader {
     ESPDirection direction;
     uint32_t id;
     uint32_t responseTo;
     ESPMessageType type;
     ESPError error;
+    uint16_t version;
     uint32_t length;
 };
 
@@ -88,7 +91,7 @@ enum ESPSystemCoalescedState: uint8_t {
     ESP_SYSTEM_COALESCED_STATE_FIRST_RUN
 };
 
-struct __packed ESPSystemStatusMessage {
+struct __attribute__((packed)) ESPSystemStatusMessage {
     ESPSystemInternalState internalState;
     ESPSystemRunState runState;
     ESPSystemCoalescedState coalescedState;
@@ -115,6 +118,8 @@ struct __packed ESPSystemStatusMessage {
     uint8_t flowMode;
     bool brewBoilerOn;
     bool serviceBoilerOn;
+    uint16_t loadedRoutine;
+    uint16_t currentRoutineStep;
     /*
      * To add:
      * Pid settings and pid parameters
@@ -137,7 +142,7 @@ enum ESPSystemCommandType: uint32_t {
     ESP_SYSTEM_COMMAND_CLEAR_ROUTINE,
 };
 
-struct __packed ESPSystemCommandPayload {
+struct __attribute__((packed)) ESPSystemCommandPayload {
     ESPSystemCommandType type;
     bool bool1;
     float float1;
@@ -150,26 +155,40 @@ struct __packed ESPSystemCommandPayload {
     uint32_t int3;
 };
 
-struct __packed ESPSystemCommandMessage {
+struct __attribute__((packed)) ESPSystemCommandMessage {
     uint32_t checksum;
     ESPSystemCommandPayload payload;
 };
 
 enum ESPRoutineStateExitConditionType: uint8_t {
     ESP_ROUTINE_STATE_EXIT_CONDITION_TYPE_BREW_TIME = 0,
+    ESP_ROUTINE_STATE_EXIT_CONDITION_TYPE_STEP_TIME,
+    ESP_ROUTINE_STATE_EXIT_CONDITION_TYPE_BREW_START,
+    ESP_ROUTINE_STATE_EXIT_CONDITION_TYPE_PRESSURE,
+    ESP_ROUTINE_STATE_EXIT_CONDITION_TYPE_WEIGHT,
 };
 
-struct __packed ESPAddCommandToRoutineMessage {
+struct __attribute__((packed)) ESPAddCommandToRoutineStepMessage {
+    uint32_t checksum;
+    uint32_t routineId;
+    uint8_t stepNum;
+    ESPSystemCommandPayload payload;
+};
+
+struct __attribute__((packed)) ESPAddExitConditionToRoutineStepMessage {
     uint32_t checksum;
     uint32_t routineId;
     uint8_t stepNum;
     ESPRoutineStateExitConditionType exitCondition;
-    float exitConditionValue;
-    ESPSystemCommandPayload payload;
+    float value;
+    uint8_t exitToStepNum;
 };
 
-struct __packed ESPESPStatusMessage {
-    bool wifiConnected;
-    bool improvAuthorizationRequested;
+struct __attribute__((packed)) ESPESPStatusMessage {
+    int64_t unixTimestamp;
+    bool pressureDeviceConnected;
+    float pressureInBar;
+    bool scaleConnected;
+    float weightInGrams;
 };
 #endif //SMART_LCC_ESP_PROTOCOL_H

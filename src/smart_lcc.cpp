@@ -318,7 +318,7 @@ int i2c_bus_scan(i2c_inst_t* i2c) {
                 externalTemp3 = mcp9600_0x67->readTemperature(0x40);
             }
 
-            USB_PRINTF("Sending status! Yay! Temp1: %.2f\n", externalTemp1);
+            //USB_PRINTF("Sending status! Yay! Temp1: %.2f\n", externalTemp1);
 
             espFirmware->sendStatus(
                     &sm,
@@ -326,7 +326,9 @@ int i2c_bus_scan(i2c_inst_t* i2c) {
                     externalTemp2,
                     externalTemp3,
                     settingsManager->getAutoSleepMin(),
-                    automations->getPlannedSleepInMinutes()
+                    automations->getPlannedSleepInMinutes(),
+                    automations->getCurrentlyLoadedRoutine(),
+                    automations->getCurrentRoutineStep()
                     );
             nextSend = make_timeout_time_ms(250); // Normal 250
 

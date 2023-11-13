@@ -34,7 +34,9 @@ public:
                     float externalTemperature2,
                     float externalTemperature3,
                     uint16_t autoSleepMinutes,
-                    float plannedSleepInSeconds
+                    float plannedSleepInSeconds,
+                    uint16_t currentRoutine,
+                    uint16_t currentRoutineStep
                             );
 
 private:

@@ -62,14 +62,6 @@ public:
 
     bool mqttConnected = false;
 
-    inline bool isWifiConnected() const {
-        if (espStatusMessage.has_value()) {
-            return espStatusMessage.value().wifiConnected;
-        }
-
-        return false;
-    }
-
     void updateStatusMessage(SystemControllerStatusMessage message);
     inline void updateEspStatusMessage(ESPESPStatusMessage message) { espStatusMessage = message; };
 private:

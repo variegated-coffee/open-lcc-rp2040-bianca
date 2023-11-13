@@ -57,6 +57,36 @@ void Automations::onBrewStarted() {
 Automations::Automations(SettingsManager *settingsManager, PicoQueue<SystemControllerCommand> *commandQueue): settingsManager(settingsManager), commandQueue(commandQueue) {
     previouslyAsleep = settingsManager->getSleepMode();
     previousAutosleepMinutes = settingsManager->getAutoSleepMin();
+
+    currentRoutine.emplace_back(); // Step 0
+
+    auto fullFlow = SystemControllerCommand{
+            .type = COMMAND_SET_FLOW_MODE,
+            .int1 = FULL_FLOW,
+    };
+
+    auto lowFlow = SystemControllerCommand{
+            .type = COMMAND_SET_FLOW_MODE,
+            .int1 = PUMP_OFF_SOLENOID_OPEN,
+    };
+
+    RoutineStep step1 = RoutineStep();
+    step1.exitConditions.emplace_back(BREW_START, 0, 2);
+    currentRoutine.push_back(step1);
+
+    RoutineStep step2 = RoutineStep();
+    step2.entryCommands.push_back(fullFlow);
+    step2.exitConditions.emplace_back(BREW_TIME_ABSOLUTE, 4, 3);
+    currentRoutine.push_back(step2);
+
+    RoutineStep step3 = RoutineStep();
+    step3.entryCommands.push_back(lowFlow);
+    step3.exitConditions.emplace_back(STEP_TIME, 10, 4);
+    currentRoutine.push_back(step3);
+
+    RoutineStep step4 = RoutineStep();
+    step4.entryCommands.push_back(fullFlow);
+    currentRoutine.push_back(step4);
 }
 
 float Automations::getPlannedSleepInMinutes() {
@@ -69,68 +99,69 @@ float Automations::getPlannedSleepInMinutes() {
 }
 
 void Automations::handleCurrentAutomationStep(SystemControllerStatusMessage sm) {
-    switch (currentAutomationStep) {
-        case 0: break;
-        case 1: {
-            if (sm.currentlyBrewing) {
-                moveToAutomationStep(2);
-            }
-            break;
-        }
-        case 2: {
-            float brewSeconds = brewStartedAt.has_value() ? (float)(absolute_time_diff_us(brewStartedAt.value(), get_absolute_time())) / 1000.f / 1000.f : 0;
+    if (currentAutomationStep >= currentRoutine.size()) {
+        // This shouldn't happen, but let's just have an escape hatch
+        moveToAutomationStep(0);
+        return;
+    }
 
-            USB_PRINTF("Brew time: %f\n", brewSeconds);
+    auto currentStep = currentRoutine.at(currentAutomationStep);
 
-            if (brewSeconds > 10.f) {
-                moveToAutomationStep(3);
-            }
-            break;
-        }
-        case 3: {
-            if (!sm.currentlyBrewing) {
-                moveToAutomationStep(0);
-            }
+    for (auto exitCondition : currentStep.exitConditions) {
+        //USB_PRINTF("Evaluating condition %u, value %f, exit: %u\n", exitCondition.type, exitCondition.value, exitCondition.exitToStep);
+        switch (exitCondition.type) {
+            case BREW_START:
+                if (sm.currentlyBrewing) {
+                    moveToAutomationStep(exitCondition.exitToStep);
+                    return;
+                }
+                break;
+            case BREW_TIME_ABSOLUTE:
+                if (currentBrewTime() >= exitCondition.value) {
+                    moveToAutomationStep(exitCondition.exitToStep);
+                    return;
+                }
+                break;
+            case STEP_TIME:
+                if (currentStepTime() >= exitCondition.value) {
+                    moveToAutomationStep(exitCondition.exitToStep);
+                    return;
+                }
+                break;
         }
     }
 }
 
 void Automations::moveToAutomationStep(uint16_t step) {
-    USB_PRINTF("Moving to step %u\n", step);
-
-    switch (step) {
-        case 1: {
-            auto lowFlow = SystemControllerCommand{
-                    .type = COMMAND_SET_FLOW_MODE,
-                    .int1 = PUMP_OFF_SOLENOID_OPEN,
-            };
-            commandQueue->addBlocking(&lowFlow);
-            break;
-        }
-        case 2: break;
-        case 3: {
-            auto fullFlow = SystemControllerCommand{
-                    .type = COMMAND_SET_FLOW_MODE,
-                    .int1 = FULL_FLOW,
-            };
-            commandQueue->addBlocking(&fullFlow);
-            break;
-        }
-        case 0: {
-            // Reset everything
-        }
+    USB_PRINTF("Moving to automation step %u\n", step);
+    if (step >= currentRoutine.size()) {
+        // This shouldn't happen, but let's just have an escape hatch
+        step = 0;
     }
 
-    if (step <= 4) {
-        currentAutomationStep = step;
+    auto nextStep = currentRoutine.at(step);
+
+    for (auto entryCommand : nextStep.entryCommands) {
+        commandQueue->addBlocking(&entryCommand);
+    }
+
+    currentAutomationStep = step;
+    currentStepStartedAt = get_absolute_time();
+
+    if (step == 0) {
+        unloadRoutine();
     }
 }
 
 void Automations::onBrewEnded() {
     brewStartedAt.reset();
+    if (currentAutomationStep > 0) {
+        moveToAutomationStep(0);
+    }
 }
 
 void Automations::enqueueRoutine(uint32_t routineId) {
+    currentlyLoadedRoutine = routineId;
     moveToAutomationStep(1);
 }
 
@@ -140,6 +171,12 @@ void Automations::cancelRoutine() {
 
 void Automations::exitingSleep() {
     resetPlannedSleep();
+}
+
+void Automations::unloadRoutine() {
+    currentlyLoadedRoutine = 0;
+    currentAutomationStep = 0;
+    currentStepStartedAt.reset();
 }
 
 

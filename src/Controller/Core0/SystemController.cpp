@@ -61,6 +61,12 @@ void SystemController::loop() {
 
     uint16_t cbValidation = validate_raw_packet(currentControlBoardRawPacket);
 
+    if (success && cbValidation != CONTROL_BOARD_VALIDATION_ERROR_NONE ) {
+        USB_PRINTF("Received packet, validation: %u:\n", cbValidation);
+        USB_PRINT_BUF(reinterpret_cast<uint8_t *>(&currentControlBoardRawPacket), sizeof(currentControlBoardRawPacket));
+        USB_PRINTF("\n");
+    }
+
     if (cbValidation) {
         softBail(BAIL_REASON_CB_PACKET_INVALID);
     }

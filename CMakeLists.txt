@@ -152,9 +152,20 @@ add_executable(smart_lcc
         src/Controller/Core1/SettingsManager.h
         src/Controller/Core1/Automations.cpp
         src/Controller/Core1/Core1Controller.cpp
-        src/Controller/Core1/Core1Controller.h)
+        src/Controller/Core1/Core1Controller.h
+        src/Routine/RoutineStep.cpp
+        src/Routine/RoutineStep.h
+        src/Routine/RoutineStepExitCondition.cpp
+        src/Routine/RoutineStepExitCondition.h
+#        src/Routine/RoutineParser.cpp
+#        src/Routine/RoutineParser.h
+#        src/Controller/Core1/Core1State.cpp
+#        src/Controller/Core1/Core1State.h
+#        src/utils/BufferReader.cpp
+#        src/utils/BufferReader.h
+)
 
-target_include_directories(smart_lcc PUBLIC lib/u8g2/csrc lib/slip lib/Ring-Buffer lib/optional-bare src stub esphome/components/lcc xbm)
+target_include_directories(smart_lcc PUBLIC lib/Ring-Buffer lib/optional-bare src)
 
 target_link_libraries(smart_lcc
         pico_stdlib
