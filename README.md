@@ -72,6 +72,14 @@ Secondly, there's `USB_DEBUG`. It enables debug output via USB-CDC, and should n
 Outside of an actual machine (e.g. using a control board emulator), it can be useful, but it delays startup by 5 seconds
 and if both cores try to print debug output at the same time, the RP2040 crashes, so it's very much just for debugging.
 
+### Rebooting into BOOTSEL or Serial Boot
+
+The RP2040 on the Open LCC board is controlled by the ESP32-S3; both the RESETn pin and the CSn for the flash. While the
+debug board (especially the R2A debug board) has facilities to control RESETn and CSn, the recommended way to bootstrap
+the project is to install the ESP32-S3 firmware first, and use that to reboot the RP2040 into BOOTSEL. Once you have
+flashed the firmware (through the USB ROM bootloader), you can henceforth use Serial Boot to update it. That being said,
+if you have the main board outside of your machine and the debug board connected, the USB ROM Bootloader is faster to use.
+
 ### A note on Serial Boot
 This project includes a [serial third stage bootloader](https://github.com/usedbytes/rp2040-serial-bootloader). This is 
 to be able to update the firmware of the RP2040 over Wi-fi via the ESP32-S3. You can still update firmware via USB, and 
