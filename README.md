@@ -51,12 +51,26 @@ Create a firmware for using the Open LCC in a Lelit Bianca to its fullest extent
 * Reading from external sensors (via I2C etc)
 * Handling Automations
 
+### Extension boards
+The Open LCC hardware has QWIIC interfaces to allow for extension. Currently the RP2040 firmware supports additional
+MCP9600 thermocouple readers. 
+
 ## Building
 
 The project is built using CMake. There are two relevant targets. `smart_lcc` and `smart_lcc_combined`. You need to first 
 build the `smart_lcc` target, and *then* build the `smart_lcc_combined` target. I'm sure it would be possible to roll both
 of these targets into one, but I haven't put enough effort into it yet. The reason for the two targets is the Serial
 Bootloader.
+
+### Defines
+
+There are a number of define flags to be aware of. Firstly, there are `HARDWARE_REVISION_*` flags to set which revision
+of the Open LCC Main Board you are using. Current options are `HARDWARE_REVISION_OPENLCC_R1A`, `HARDWARE_REVISION_OPENLCC_R2A`
+and `HARDWARE_REVISION_OPENLCC_R2B`. You need to set one (and only one) of these
+
+Secondly, there's `USB_DEBUG`. It enables debug output via USB-CDC, and should not be used inside an actual machine.
+Outside of an actual machine (e.g. using a control board emulator), it can be useful, but it delays startup by 5 seconds
+and if both cores try to print debug output at the same time, the RP2040 crashes, so it's very much just for debugging.
 
 ### A note on Serial Boot
 This project includes a [serial third stage bootloader](https://github.com/usedbytes/rp2040-serial-bootloader). This is 
