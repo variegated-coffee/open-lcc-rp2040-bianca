@@ -61,10 +61,10 @@ typedef enum {
 } SsrState;
 
 typedef enum {
-    FULL_FLOW = 0,
-    PUMP_ON_PWM_SOLENOID = 1,
-    PUMP_OFF_PWM_SOLENOID = 2,
+    PUMP_ON_SOLENOID_OPEN = 0,
+    PUMP_ON_SOLENOID_CLOSED = 1,
     PUMP_OFF_SOLENOID_OPEN = 3,
+    PUMP_OFF_SOLENOID_CLOSED = 4
 } FlowMode;
 
 typedef enum {

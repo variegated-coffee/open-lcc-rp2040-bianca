@@ -148,16 +148,16 @@ bool EspFirmware::sendStatus(
         autosleepIn = (uint16_t)plannedSleepInSeconds;
     }
 
-    uint8_t flowMode = ESP_FLOW_MODE_FULL_FLOW;
+    uint8_t flowMode = ESP_FLOW_MODE_PUMP_ON_SOLENOID_OPEN;
     switch (systemControllerStatusMessage->flowMode) {
-        case FULL_FLOW:
-            flowMode = ESP_FLOW_MODE_FULL_FLOW;
+        case PUMP_ON_SOLENOID_OPEN:
+            flowMode = ESP_FLOW_MODE_PUMP_ON_SOLENOID_OPEN;
             break;
-        case PUMP_ON_PWM_SOLENOID:
-            flowMode = ESP_FLOW_MODE_PUMP_ON_PWM_SOLENOID;
+        case PUMP_ON_SOLENOID_CLOSED:
+            flowMode = ESP_FLOW_MODE_PUMP_ON_SOLENOID_CLOSED;
             break;
-        case PUMP_OFF_PWM_SOLENOID:
-            flowMode = ESP_FLOW_MODE_PUMP_OFF_PWM_SOLENOID;
+        case PUMP_OFF_SOLENOID_CLOSED:
+            flowMode = ESP_FLOW_MODE_PUMP_OFF_SOLENOID_CLOSED;
             break;
         case PUMP_OFF_SOLENOID_OPEN:
             flowMode = ESP_FLOW_MODE_PUMP_OFF_SOLENOID_OPEN;
@@ -275,7 +275,6 @@ void EspFirmware::handleESPStatus(ESPMessageHeader *header) {
 }
 
 void EspFirmware::handleCommand(ESPMessageHeader *header) {
-    printf("Command received");
     if (header->length == sizeof(ESPSystemCommandMessage)) {
         ESPSystemCommandMessage message{};
         bool success = readFromRingBufferBlockingWithTimeout(reinterpret_cast<uint8_t *>(&message), sizeof(ESPSystemCommandMessage), make_timeout_time_ms(50));
@@ -285,6 +284,8 @@ void EspFirmware::handleCommand(ESPMessageHeader *header) {
             crc32(&message.payload, sizeof(ESPSystemCommandPayload), &crc);
 
             if (crc == message.checksum) {
+                USB_PRINTF("Command received, CRC correct, type: %u, i1: %u\n", message.payload.type, message.payload.int1);
+
                 switch (message.payload.type) {
                     case ESP_SYSTEM_COMMAND_SET_SLEEP_MODE:
                         if (!message.payload.bool1) {
@@ -333,20 +334,20 @@ void EspFirmware::handleCommand(ESPMessageHeader *header) {
                     case ESP_SYSTEM_COMMAND_SET_FLOW_MODE: {
                         uint32_t arg;
                         switch (message.payload.int1) {
-                            case ESP_FLOW_MODE_FULL_FLOW:
-                                arg = FULL_FLOW;
+                            case ESP_FLOW_MODE_PUMP_ON_SOLENOID_OPEN:
+                                arg = PUMP_ON_SOLENOID_OPEN;
                                 break;
                             case ESP_FLOW_MODE_PUMP_OFF_SOLENOID_OPEN:
                                 arg = PUMP_OFF_SOLENOID_OPEN;
                                 break;
-                            case ESP_FLOW_MODE_PUMP_OFF_PWM_SOLENOID:
-                                arg = PUMP_OFF_PWM_SOLENOID;
+                            case ESP_FLOW_MODE_PUMP_ON_SOLENOID_CLOSED:
+                                arg = PUMP_ON_SOLENOID_CLOSED;
                                 break;
-                            case ESP_FLOW_MODE_PUMP_ON_PWM_SOLENOID:
-                                arg = PUMP_ON_PWM_SOLENOID;
+                            case ESP_FLOW_MODE_PUMP_OFF_SOLENOID_CLOSED:
+                                arg = PUMP_OFF_SOLENOID_CLOSED;
                                 break;
                             default:
-                                arg = FULL_FLOW;
+                                arg = PUMP_ON_SOLENOID_OPEN;
                         }
 
                         auto command = SystemControllerCommand{.type = COMMAND_SET_FLOW_MODE, .int1 = arg};

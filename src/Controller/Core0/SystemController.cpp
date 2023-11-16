@@ -162,6 +162,23 @@ void SystemController::sendLccPacket() {
     }
 }
 
+
+void SystemController::updateForFlowMode(LccParsedPacket *parsedPacket) {
+    if (flowMode == PUMP_ON_SOLENOID_OPEN) {
+        parsedPacket->pump_on = true;
+        parsedPacket->water_line_solenoid_open = true;
+    } else if (flowMode == PUMP_OFF_SOLENOID_OPEN) {
+        parsedPacket->pump_on = false;
+        parsedPacket->water_line_solenoid_open = true;
+    } else if (flowMode == PUMP_ON_SOLENOID_CLOSED) {
+        parsedPacket->pump_on = true;
+        parsedPacket->water_line_solenoid_open = false;
+    } else { // flowMode == PUMP_OFF_SOLENOID_CLOSED
+        parsedPacket->pump_on = false;
+        parsedPacket->water_line_solenoid_open = false;
+    }
+}
+
 LccParsedPacket SystemController::handleControlBoardPacket(ControlBoardParsedPacket latestParsedPacket) {
     LccParsedPacket lcc;
 
@@ -177,13 +194,7 @@ LccParsedPacket SystemController::handleControlBoardPacket(ControlBoardParsedPac
     if (!brewStartedAt.has_value()) {
         if (!waterTankEmptyLatch.get()) {
             if (latestParsedPacket.brew_switch) {
-                if (flowMode == FULL_FLOW) {
-                    lcc.pump_on = true;
-                    lcc.water_line_solenoid_open = true;
-                } else if (flowMode == PUMP_OFF_SOLENOID_OPEN) {
-                    lcc.pump_on = false;
-                    lcc.water_line_solenoid_open = true;
-                }
+                updateForFlowMode(&lcc);
 
                 brewing = true;
 
@@ -196,13 +207,7 @@ LccParsedPacket SystemController::handleControlBoardPacket(ControlBoardParsedPac
         }
     } else { // If we are brewing, keep brewing even if there is no water in the tank
         if (latestParsedPacket.brew_switch) {
-            if (flowMode == FULL_FLOW) {
-                lcc.pump_on = true;
-                lcc.water_line_solenoid_open = true;
-            } else if (flowMode == PUMP_OFF_SOLENOID_OPEN) {
-                lcc.pump_on = false;
-                lcc.water_line_solenoid_open = true;
-            }
+            updateForFlowMode(&lcc);
             brewing = true;
         } else { // Filling the service boiler is not an option while brewing
             onBrewEnded();
@@ -344,17 +349,17 @@ void SystemController::handleCommands() {
                 break;
             case COMMAND_SET_FLOW_MODE:
                 switch (command.int1) {
-                    case FULL_FLOW:
-                        flowMode = FULL_FLOW;
-                        break;
-                    case PUMP_OFF_PWM_SOLENOID:
-                        flowMode = PUMP_OFF_PWM_SOLENOID;
-                        break;
-                    case PUMP_ON_PWM_SOLENOID:
-                        flowMode = PUMP_ON_PWM_SOLENOID;
+                    case PUMP_ON_SOLENOID_OPEN:
+                        flowMode = PUMP_ON_SOLENOID_OPEN;
                         break;
                     case PUMP_OFF_SOLENOID_OPEN:
                         flowMode = PUMP_OFF_SOLENOID_OPEN;
+                        break;
+                    case PUMP_ON_SOLENOID_CLOSED:
+                        flowMode = PUMP_ON_SOLENOID_CLOSED;
+                        break;
+                    case PUMP_OFF_SOLENOID_CLOSED:
+                        flowMode = PUMP_OFF_SOLENOID_CLOSED;
                         break;
                 }
                 break;
@@ -370,7 +375,7 @@ void SystemController::updateControllerSettings() {
 
     if (settings->getSleepMode()) {
         brewBoilerController.updateSetPoint(70.f);
-        serviceBoilerController.updateSetPoint(70.f);
+        serviceBoilerController.updateSetPoint(0.f);
     } else if (runState == RUN_STATE_HEATUP_STAGE_1) {
         brewBoilerController.updateSetPoint(130.f);
         serviceBoilerController.updateSetPoint(0.f);

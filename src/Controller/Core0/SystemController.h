@@ -97,7 +97,7 @@ private:
     HybridController brewBoilerController;
     HysteresisController serviceBoilerController;
 
-    FlowMode flowMode = FULL_FLOW;
+    FlowMode flowMode = PUMP_ON_SOLENOID_OPEN;
 
     PicoQueue<SsrState> ssrStateQueue = PicoQueue<SsrState>(25);
 
@@ -118,6 +118,8 @@ private:
 
     void onSleepModeEntered();
     void onSleepModeExited();
+
+    void updateForFlowMode(LccParsedPacket* parsedPacket);
 };
 
 
