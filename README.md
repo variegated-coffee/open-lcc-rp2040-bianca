@@ -4,8 +4,7 @@ This is an evolution of [magnusnordlander/smart-lcc](https://github.com/magnusno
 
 ## Compatibility
 
-This firmware is compatible with Open LCC Board R1A through R2B. Furthermore, it's *known* to be compatible with the Bianca V2, but it's strongly suspected that it is compatible with Bianca V1, and Bianca V3 (with exception for the
- new Power LED). If you have a Bianca V3 and is interested in installing this project, let me (@magnusnordlander) know and we can work together on getting it fully compatible.
+This firmware is compatible with Open LCC Board R1A through R2B. Furthermore, it's *known* to be compatible with the Bianca V2, but it's strongly suspected that it is compatible with Bianca V1, and Bianca V3 (with exception for the new Power LED). If you have a Bianca V3 and is interested in installing this project, let me (@magnusnordlander) know and we can work together on getting it fully compatible.
 
 ## Disclaimer
 
@@ -26,9 +25,19 @@ There are (at the time of writing) three versions of the Bianca, V1, V2, and V3.
 * The power light now an LED and software controlled (not part of the upgrade kit)
   * Available as P/N 3000056, but it's ridiculously expensive
 
-It also uses a different Gicar Control Box, but since the V3 upgrade kit doesn't include it, my suspicion is that the changes in it are marginal (it could be as simple as the box having a different sticker). The new part number is 9600125, and the old one was 9600046. One known change is the new Standby mode, which presumably should be disabled when using Open LCC. It is unknown if this is the only change.
+It also uses a different Gicar Control Box, but since the V3 upgrade kit doesn't include it, my suspicion is that the changes in it are marginal (it could be as simple as the box having a different sticker). The new part number is 9600125, and the old one was 9600046. One known change is the new Standby mode, which should be disabled when using Open LCC. It is unknown if this is the only change. I would love photos of the V3 Control Board internals, just to confirm that there are no relevant hardware differences.
 
-I have done some reverse engineering of the Control Board, and as such I have gained a better understanding of how it works, and how the protocol works. Interestingly, new solenoid is just a regular solenoid, so my suspicion is that the LCC basically PWMs the solenoid to create the low flow mode. I would love a protocol dump between a V3 LCC and the Control Board to confirm though. I would also love photos of the Control Board internals, just to confirm that there are no relevant hardware differences.
+#### V3 Bianca suppport
+
+My Bianca is a V2, but it's been upgraded with a V3 solenoid valve. I've implemented support for the Low Flow valve, and will implement support for the power LED. To my knowledge, this has not been tested in a real V3 though. 
+
+As for the new features of the V3:
+
+* The new V3 standby mode might never be supported, but it's kind of a useless mode. Just disable it.
+* You can use routines to do a low flow start and low flow finish.
+* Brew temperature offset – I might implement this, but it's somewhat emulatable with routines
+   * I'm not sure how much of a difference this makes to water temperature in the cup, the E61 group holds a *lot* of heat
+   * Not to be confused with the brew temperature offset setting that already exists though. That one is just an offset from the true boiler temperature to the temperature shown on the display (default in the stock LCC is -10 degrees celsius, but I use -16.5, as that is a truer representation of the temperature at the group
 
 ### Versioning
 This project uses Semver. The major version number is increased whe RP2040 <-> ESP32 protocol version is increased (as that is a BC break).
