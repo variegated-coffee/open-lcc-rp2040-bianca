@@ -21,7 +21,6 @@
 
 repeating_timer_t safePacketBootupTimer;
 SystemController* systemController;
-SystemStatus* status;
 SettingsFlash* settingsFlash;
 SettingsManager* settingsManager;
 PicoQueue<SystemControllerStatusMessage>* statusQueue;
@@ -223,7 +222,7 @@ int i2c_bus_scan(i2c_inst_t* i2c) {
 
     automations = new Automations(settingsManager, commandQueue);
 
-    espFirmware = new EspFirmware(ESP_UART, commandQueue, status, settingsManager, automations);
+    espFirmware = new EspFirmware(ESP_UART, commandQueue, settingsManager, automations);
     EspFirmware::initInterrupts(ESP_UART);
 
     i2c_bus_scan(i2c0);
@@ -301,7 +300,6 @@ int i2c_bus_scan(i2c_inst_t* i2c) {
             statusQueue->removeBlocking(&sm);
         }
 
-        status->updateStatusMessage(sm);
         espFirmware->loop();
         automations->loop(sm);
 
@@ -362,8 +360,6 @@ int main() {
 
     systemController = new SystemController(CB_UART, statusQueue, commandQueue);
     add_repeating_timer_ms(1000, repeating_timer_callback, nullptr, &safePacketBootupTimer);
-
-    status = new SystemStatus();
 
     multicore_reset_core1();
     multicore_launch_core1(main1);

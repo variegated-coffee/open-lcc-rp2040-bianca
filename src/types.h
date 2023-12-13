@@ -73,6 +73,7 @@ typedef enum {
     SYSTEM_CONTROLLER_COALESCED_STATE_TEMPS_NORMALIZING,
     SYSTEM_CONTROLLER_COALESCED_STATE_WARM,
     SYSTEM_CONTROLLER_COALESCED_STATE_SLEEPING,
+    SYSTEM_CONTROLLER_COALESCED_STATE_STANDBY,
     SYSTEM_CONTROLLER_COALESCED_STATE_BAILED,
     SYSTEM_CONTROLLER_COALESCED_STATE_FIRST_RUN
 } SystemControllerCoalescedState;
@@ -81,6 +82,8 @@ struct SettingStruct {
     float brewTemperatureOffset = -10;
     bool sleepMode = false;
     bool ecoMode = false;
+    bool steamOnlyMode = false;
+    bool standbyMode = false;
     float brewTemperatureTarget = 105;
     float serviceTemperatureTarget = 120;
     uint16_t autoSleepMin = 0;
@@ -105,6 +108,8 @@ struct SystemControllerStatusMessage{
     bool serviceSSRActive{};
     bool ecoMode{};
     bool sleepMode{};
+    bool steamOnlyMode{};
+    bool standbyMode{};
     SystemControllerInternalState internalState{};
     SystemControllerRunState runState{};
     SystemControllerCoalescedState coalescedState{};
@@ -112,9 +117,6 @@ struct SystemControllerStatusMessage{
     bool currentlyBrewing{};
     bool currentlyFillingServiceBoiler{};
     bool waterTankLow{};
-//    uint16_t autoSleepMinutes{};
-//    float plannedSleepInSeconds{};
-//    absolute_time_t lastSleepModeExitAt = nil_time;
     uint16_t bailCounter{};
     uint16_t sbRawHi{};
     uint16_t sbRawLo{};
@@ -130,12 +132,15 @@ typedef enum {
     COMMAND_SET_SERVICE_PID_PARAMETERS,
     COMMAND_SET_ECO_MODE,
     COMMAND_SET_SLEEP_MODE,
-    COMMAND_SET_AUTO_SLEEP_MINUTES,
     COMMAND_UNBAIL,
     COMMAND_TRIGGER_FIRST_RUN,
     COMMAND_BEGIN,
     COMMAND_FORCE_HARD_BAIL,
     COMMAND_SET_FLOW_MODE,
+    COMMAND_TRIGGER_HEATUP,
+    COMMAND_CANCEL_HEATUP,
+    COMMAND_SET_STEAM_ONLY_MODE,
+    COMMAND_SET_STANDBY_MODE,
 } SystemControllerCommandType;
 
 struct SystemControllerCommand {

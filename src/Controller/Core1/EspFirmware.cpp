@@ -60,7 +60,7 @@ bool EspFirmware::readFromRingBufferBlockingWithTimeout(uint8_t *dst, size_t len
     return readLen == len;
 }
 
-EspFirmware::EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SystemStatus* status, SettingsManager* settingsManager, Automations* automations) : uart(uart), commandQueue(commandQueue), status(status), settingsManager(settingsManager), automations(automations) {}
+EspFirmware::EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SettingsManager* settingsManager, Automations* automations) : uart(uart), commandQueue(commandQueue), settingsManager(settingsManager), automations(automations) {}
 
 uint32_t rnd(void){
     int k, random=0;
@@ -268,8 +268,6 @@ void EspFirmware::handleESPStatus(ESPMessageHeader *header) {
     if (!success) {
         return sendNack(header->id, ESP_ERROR_INCOMPLETE_DATA);
     }
-
-    status->updateEspStatusMessage(message);
 
     sendAck(header->id);
 }

@@ -8,7 +8,7 @@
 #include "hardware/watchdog.h"
 #include "utils/USBDebug.h"
 
-#define SETTINGS_CURRENT_VERSION 0x01
+#define SETTINGS_CURRENT_VERSION 0x02
 #define SETTINGS_ADDR 0x00000000
 
 struct SettingsHeader{
@@ -18,12 +18,14 @@ struct SettingsHeader{
 };
 
 const SettingStruct defaultSettings{
-        .brewTemperatureOffset = -10,
+        .brewTemperatureOffset = -10, // I'm using -18.5
         .sleepMode = false,
         .ecoMode = false,
+        .steamOnlyMode = false,
+        .standbyMode = false,
         .brewTemperatureTarget = 105,
         .serviceTemperatureTarget = 120,
-        .autoSleepMin = 0,
+        .autoSleepMin = 120,
         .brewPidParameters = PidSettings{.Kp = 0.8, .Ki = 0.12, .Kd = 12.0, .windupLow = -7.f, .windupHigh = 7.f},
         .servicePidParameters = PidSettings{.Kp = 0.6, .Ki = 0.1, .Kd = 1.0, .windupLow = -10.f, .windupHigh = 10.f},
 };
@@ -54,6 +56,15 @@ void SettingsManager::setEcoMode(bool ecoMode)
     });
 }
 
+void SettingsManager::setSteamOnlyMode(bool steamOnlyMode)
+{
+    currentSettings.steamOnlyMode = steamOnlyMode;
+    sendMessage(SystemControllerCommand{
+            .type = COMMAND_SET_STEAM_ONLY_MODE,
+            .bool1 = steamOnlyMode,
+    });
+}
+
 void SettingsManager::setTargetBrewTemp(float targetBrewTemp)
 {
     currentSettings.brewTemperatureTarget = targetBrewTemp;
@@ -66,10 +77,6 @@ void SettingsManager::setTargetBrewTemp(float targetBrewTemp)
 void SettingsManager::setAutoSleepMin(uint16_t minutes)
 {
     currentSettings.autoSleepMin = minutes;
-    sendMessage(SystemControllerCommand{
-            .type = COMMAND_SET_AUTO_SLEEP_MINUTES,
-            .float1 = static_cast<float>(minutes),
-    });
 }
 
 void SettingsManager::setOffsetTargetBrewTemp(float offsetTargetBrewTemp) {
@@ -120,12 +127,20 @@ void SettingsManager::setSleepMode(bool sleepMode)
     });
 }
 
+void SettingsManager::setStandbyMode(bool standbyMode) {
+    currentSettings.standbyMode = standbyMode;
+    sendMessage(SystemControllerCommand{
+            .type = COMMAND_SET_STANDBY_MODE,
+            .bool1 = standbyMode
+    });
+}
+
 void SettingsManager::initialize() {
     readSettings();
 
-    // If we've reset due to the watchdog or for some other reason, use the previous sleep mode setting, otherwise reset it to false
-    if (currentSettings.sleepMode && !watchdog_enable_caused_reboot() && to_ms_since_boot(get_absolute_time()) < 20000) {
+    if (!watchdog_enable_caused_reboot() && to_ms_since_boot(get_absolute_time()) < 20000) {
         currentSettings.sleepMode = false;
+        currentSettings.standbyMode = false;
     }
 
     sendAllSettings();
@@ -214,10 +229,12 @@ void SettingsManager::writeToFlash() {
 void SettingsManager::sendAllSettings() {
     setBrewTemperatureOffset(currentSettings.brewTemperatureOffset);
     setEcoMode(currentSettings.ecoMode);
+    setSteamOnlyMode(currentSettings.steamOnlyMode);
     setTargetBrewTemp(currentSettings.brewTemperatureTarget);
     setAutoSleepMin(currentSettings.autoSleepMin);
     setTargetServiceTemp(currentSettings.serviceTemperatureTarget);
     setBrewPidParameters(currentSettings.brewPidParameters);
     setServicePidParameters(currentSettings.servicePidParameters);
     setSleepMode(currentSettings.sleepMode);
+    setStandbyMode(currentSettings.standbyMode);
 }

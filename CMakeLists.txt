@@ -124,7 +124,6 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/lib/no-OS-FatFS/src build)
 add_executable(smart_lcc
         src/smart_lcc.cpp
         src/double_tap.cpp
-        src/SystemStatus.cpp
         src/Controller/Core0/SystemSettings.cpp
         src/utils/checksum.cpp
         src/utils/hex_format.cpp

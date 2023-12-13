@@ -8,10 +8,10 @@
 #include <optional.hpp>
 #include "Controller/Core0/Protocol/lcc_protocol.h"
 #include "Controller/Core0/Protocol/control_board_protocol.h"
-#include <SystemStatus.h>
 #include "Controller/Core0/Util/TimedLatch.h"
 #include "Controller/Core0/Util/HysteresisController.h"
 #include "Controller/Core0/Util/HybridController.h"
+#include "SystemSettings.h"
 #include <queue>
 #include <types.h>
 #include <hardware/uart.h>
@@ -84,7 +84,7 @@ private:
     [[nodiscard]] inline bool shouldForceHysteresisForBrewBoiler() const { return runState == RUN_STATE_HEATUP_STAGE_1 || runState == RUN_STATE_HEATUP_STAGE_2; };
 
     void setSleepMode(bool sleepMode);
-    void setAutoSleepMinutes(float minutes);
+    void setStandbyMode(bool standbyMode);
 
     [[nodiscard]] bool areTemperaturesAtSetPoint() const;
 
@@ -109,15 +109,10 @@ private:
 
     void sendLccPacket();
 
-    void updatePlannedAutoSleep();
-
     void handleRunningStateAutomations();
 
     void onBrewStarted();
     void onBrewEnded();
-
-    void onSleepModeEntered();
-    void onSleepModeExited();
 
     void updateForFlowMode(LccParsedPacket* parsedPacket);
 };

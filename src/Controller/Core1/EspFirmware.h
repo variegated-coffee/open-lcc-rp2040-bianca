@@ -13,13 +13,12 @@
 #include "types.h"
 #include "utils/PicoQueue.h"
 #include "ringbuffer.hpp"
-#include "SystemStatus.h"
 #include "SettingsManager.h"
 #include "Automations.h"
 
 class EspFirmware {
 public:
-    explicit EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SystemStatus* status, SettingsManager* settingsManager, Automations* automations);
+    explicit EspFirmware(uart_inst_t *uart, PicoQueue<SystemControllerCommand> *commandQueue, SettingsManager* settingsManager, Automations* automations);
 
     void loop();
 
@@ -42,7 +41,6 @@ public:
 private:
     uart_inst_t *uart;
     PicoQueue<SystemControllerCommand> *commandQueue;
-    SystemStatus* status;
     SettingsManager* settingsManager;
     Automations* automations;
 
