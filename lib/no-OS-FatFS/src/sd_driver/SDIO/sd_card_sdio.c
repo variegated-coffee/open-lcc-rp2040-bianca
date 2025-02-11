@@ -18,6 +18,9 @@
 #include "util.h"
 #include "diskio.h"
 #include "my_debug.h"
+#include "hardware/gpio.h"
+#include "hardware/regs/pads_bank0.h"
+#include "hardware/structs/pads_bank0.h"
 
 #define STATE sd_card_p->sdio_if_p->state
 
@@ -522,19 +525,20 @@ static int sd_sdio_read_blocks(sd_card_t *sd_card_p, uint8_t *buffer, uint64_t u
 }
 
 // Helper function to configure whole GPIO in one line
-static void gpio_conf(uint gpio, enum gpio_function fn, bool pullup, bool pulldown, bool output, bool initial_state, bool fast_slew)
+static void gpio_conf(uint gpio, gpio_function_t fn, bool pullup, bool pulldown, bool output, bool initial_state, bool fast_slew)
 {
-    gpio_put(gpio, initial_state);
-    gpio_set_dir(gpio, output);
-    gpio_set_pulls(gpio, pullup, pulldown);
     gpio_set_function(gpio, fn);
-
-    if (fast_slew)
-    {
-        padsbank0_hw->io[gpio] |= PADS_BANK0_GPIO0_SLEWFAST_BITS;
+    gpio_set_pulls(gpio, pullup, pulldown);
+    
+    if (output) {
+        gpio_set_dir(gpio, GPIO_OUT);
+        gpio_put(gpio, initial_state);
+    }
+    
+    if (fast_slew) {
+        pads_bank0_hw->io[gpio] |= PADS_BANK0_GPIO0_SLEWFAST_BITS;
     }
 }
-
 void sd_sdio_ctor(sd_card_t *sd_card_p) {
     assert(sd_card_p->sdio_if_p); // Must have an interface object
     /*

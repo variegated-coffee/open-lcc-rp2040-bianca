@@ -115,8 +115,8 @@ function(bootloader_build_combined NAME)
             COMMAND ${CMAKE_OBJCOPY} -Obinary ${COMBINED}.elf ${COMBINED}.bin
     )
     add_custom_command(TARGET ${COMBINED} POST_BUILD
-            COMMAND ELF2UF2 ${COMBINED}.elf ${COMBINED}.uf2
-            VERBATIM)
+        COMMAND ${PICO_SDK_PATH}/build/_deps/picotool/picotool uf2 convert ${COMBINED}.elf ${COMBINED}.uf2
+        VERBATIM)
 endfunction()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib/no-OS-FatFS/src build)

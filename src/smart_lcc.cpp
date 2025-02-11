@@ -18,6 +18,7 @@
 #include "utils/USBDebug.h"
 #include "pins.h"
 #include "Controller/Core1/Automations.h"
+#include "ff.h"  // This should give you access to STA_NOINIT and other SD card status flags
 
 repeating_timer_t safePacketBootupTimer;
 SystemController* systemController;
@@ -35,29 +36,49 @@ Automations* automations;
 
 /* SDIO Interface */
 static sd_sdio_if_t sdio_if = {
-        /*
-        Pins CLK_gpio, D1_gpio, D2_gpio, and D3_gpio are at offsets from pin D0_gpio.
-        The offsets are determined by sd_driver\SDIO\rp2040_sdio.pio.
-            CLK_gpio = (D0_gpio + SDIO_CLK_PIN_D0_OFFSET) % 32;
-            As of this writing, SDIO_CLK_PIN_D0_OFFSET is 30,
-                which is -2 in mod32 arithmetic, so:
-            CLK_gpio = D0_gpio -2.
-            D1_gpio = D0_gpio + 1;
-            D2_gpio = D0_gpio + 2;
-            D3_gpio = D0_gpio + 3;
-        */
-        .CMD_gpio = SD_MOSI_CMD,
-        .D0_gpio = SD_MISO_DAT0,
-        .baud_rate = 15 * 1000 * 1000  // 15 MHz
+    .CLK_gpio = SD_MISO_DAT0 - 2,  // CLK is offset by -2 from D0
+    .CMD_gpio = SD_MOSI_CMD,
+    .D0_gpio = SD_MISO_DAT0,
+    .D1_gpio = SD_MISO_DAT0 + 1,   // D1 is offset by +1 from D0
+    .D2_gpio = SD_MISO_DAT0 + 2,   // D2 is offset by +2 from D0
+    .D3_gpio = SD_MISO_DAT0 + 3,   // D3 is offset by +3 from D0
+    .SDIO_PIO = pio0,
+    .DMA_IRQ_num = DMA_IRQ_0,
+    .use_exclusive_DMA_IRQ_handler = false,
+    .baud_rate = 15 * 1000 * 1000,  // 15 MHz
+    .set_drive_strength = true,
+    .CLK_gpio_drive_strength = GPIO_DRIVE_STRENGTH_12MA,
+    .CMD_gpio_drive_strength = GPIO_DRIVE_STRENGTH_8MA,
+    .D0_gpio_drive_strength = GPIO_DRIVE_STRENGTH_8MA,
+    .D1_gpio_drive_strength = GPIO_DRIVE_STRENGTH_8MA,
+    .D2_gpio_drive_strength = GPIO_DRIVE_STRENGTH_8MA,
+    .D3_gpio_drive_strength = GPIO_DRIVE_STRENGTH_8MA,
+    .state = {}
 };
 
 /* Hardware Configuration of the SD Card socket "object" */
 static sd_card_t sd_card = {
-        /* "pcName" is the FatFs "logical drive" identifier.
-        (See http://elm-chan.org/fsw/ff/doc/filename.html#vol) */
-        .pcName = "0:",
-        .type = SD_IF_SDIO,
-        .sdio_if_p = &sdio_if
+    .pcName = "0:",
+    .type = SD_IF_SDIO,
+    .sdio_if_p = &sdio_if,
+    .use_card_detect = true,
+    .card_detect_gpio = SD_DET_B,
+    .card_detected_true = false,
+    .card_detect_use_pull = true,
+    .card_detect_pull_hi = true,
+    .m_Status = 0,  // Instead of STA_NOINIT which wasn't found
+    .csd = {},
+    .cid = {},
+    .sectors = 0,
+    .card_type = 0,  // Instead of SDCARD_NONE
+    .mutex = nullptr,
+    .fatfs = {},
+    .mounted = false,
+    .init = nullptr,
+    .write_blocks = nullptr,
+    .read_blocks = nullptr,
+    .get_num_sectors = nullptr,
+    .sd_test_com = nullptr
 };
 
 /* Callbacks used by the library: */
