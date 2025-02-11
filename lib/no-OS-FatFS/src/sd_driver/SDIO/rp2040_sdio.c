@@ -23,6 +23,7 @@
 #include "sd_card.h"
 #include "my_debug.h"
 #include "util.h"
+#include "hardware/gpio.h"  // Add this at the top with other includes
 
 // #define azdbg(Params...)DMA_CH
 // #define azlog(Params...)
@@ -839,13 +840,8 @@ bool rp2040_sdio_init(sd_card_t *sd_card_p, float clk_div) {
     // Because the CLK is driven synchronously to CPU clock,
     // there should be no metastability problems.
     SDIO_PIO->input_sync_bypass |= (1 << SDIO_CLK) | (1 << SDIO_CMD) | (1 << SDIO_D0) | (1 << SDIO_D1) | (1 << SDIO_D2) | (1 << SDIO_D3);
+    gpio_function_t fn = pio1 == SDIO_PIO ? GPIO_FUNC_PIO1 : GPIO_FUNC_PIO0;
 
-    // Redirect GPIOs to PIO
-    enum gpio_function fn;
-    if (pio1 == SDIO_PIO) 
-        fn = GPIO_FUNC_PIO1;
-    else
-        fn = GPIO_FUNC_PIO0; 
     gpio_set_function(SDIO_CMD, fn);
     gpio_set_function(SDIO_CLK, fn);
     gpio_set_function(SDIO_D0, fn);
